@@ -28,6 +28,8 @@ let basemaps = {
   "Carto DB": cartoDB,
   "ESRI Imagery": esriImagery,
 };
+// a variable to nest the geojson layer
+let geojson;
 
 // fetch the data
 //determine quantile breaks(using QGIS)
@@ -58,16 +60,42 @@ let info = L.control({
 });
 info.onAdd = () => {
   let div = L.DomUtil.create("div", "info");
-  div.innerHTML = "<h3>Population Density</h3>";
+  div.innerHTML = '<h3>Population Density</h3><p id="current_feature"></p>';
   return div;
 };
 info.addTo(map);
+// populate the <p> dynamically
+let info_p = document.getElementById("current_feature");
+// add an event listener func
+let highlighted_feature = (e) => {
+  e.target.setStyle({
+    weight: 5,
+    color: "yellow",
+    fillOpacity: 0.5,
+  });
+  e.target.bringToFront();
+  info_p.innerHTML = `<h4>County:</h4> ${e.target.feature.properties.name} <br>
+    <h4>Population:</h4> ${Math.round(
+      e.target.feature.properties.total_pop
+    ).toLocaleString()} <br>
+    <h4>Pop. Density:</h4> ${e.target.feature.properties.density.toFixed(1)}`;
+};
+let reset_highlighted_feature = (e) => {
+  geojson.resetStyle(e.target);
+  info_p.innerHTML = "";
+};
 fetch("data/county2_2p.geojson")
   .then((response) => {
     return response.json();
   })
   .then((data) => {
-    L.geoJSON(data, { style: county_style }).addTo(map);
+    geojson = L.geoJSON(data, {
+      style: county_style,
+      onEachFeature: (feature, layer) => {
+        layer.addEventListener("mouseover", highlighted_feature);
+        layer.addEventListener("mouseout", reset_highlighted_feature);
+      },
+    }).addTo(map);
   });
 
 L.control.layers(basemaps).addTo(map);
