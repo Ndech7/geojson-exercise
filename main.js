@@ -52,6 +52,16 @@ let county_style = (feature) => {
     weight: 0.5,
   };
 };
+//add an information box
+let info = L.control({
+  position: "bottomleft",
+});
+info.onAdd = () => {
+  let div = L.DomUtil.create("div", "info");
+  div.innerHTML = "<h3>Population Density</h3>";
+  return div;
+};
+info.addTo(map);
 fetch("data/county2_2p.geojson")
   .then((response) => {
     return response.json();
